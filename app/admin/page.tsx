@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
 import { getUserByEmail } from '@/utils/db/actions'
 import { 
@@ -34,6 +34,11 @@ interface TableConfig {
   icon: any
   label: string
   columns: string[]
+}
+
+interface TableData {
+  id: string;
+  [key: string]: string | number | boolean;
 }
 
 const TABLE_CONFIGS: Record<TableName, TableConfig> = {
@@ -72,10 +77,10 @@ const TABLE_CONFIGS: Record<TableName, TableConfig> = {
 export default function AdminDashboard() {
   const router = useRouter()
   const [selectedTable, setSelectedTable] = useState<TableName>('users')
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState<TableData[]>([])
+  const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [editingItem, setEditingItem] = useState<any>(null)
+  const [editingItem, setEditingItem] = useState<TableData | null>(null)
   const [filters, setFilters] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -109,7 +114,7 @@ export default function AdminDashboard() {
     try {
       const response = await fetch(`/api/admin/${selectedTable}`)
       const result = await response.json()
-      setData(Array.isArray(result) ? result : [])
+      setData(result)
     } catch (error) {
       console.error('Error fetching data:', error)
       toast.error('Failed to fetch data')
@@ -119,26 +124,23 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: TableData) => {
     setEditingItem(item)
   }
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return
 
     try {
       const response = await fetch(`/api/admin/${selectedTable}/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        method: 'DELETE'
       })
-      
+
       if (!response.ok) {
-        throw new Error('Failed to delete')
+        throw new Error('Failed to delete item')
       }
 
-      setData(data.filter(item => item.id !== id))
+      setData(data.filter(item => item.id.toString() !== id.toString()))
       toast.success('Item deleted successfully')
     } catch (error) {
       console.error('Error deleting item:', error)
@@ -146,7 +148,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleSave = async (item: any) => {
+  const handleSave = async (item: TableData) => {
     try {
       const updateData = { ...item }
       
@@ -229,7 +231,7 @@ export default function AdminDashboard() {
     window.URL.revokeObjectURL(url)
   }
 
-  const filteredData = Array.isArray(data) ? data.filter(item => {
+  const filteredData = data.filter(item => {
     if (!item) return false;
     
     // Apply search term filter
@@ -249,7 +251,7 @@ export default function AdminDashboard() {
     })
 
     return searchMatch && filterMatch
-  }) : [];
+  })
 
   return (
     <div className="h-[calc(100vh-80px)] flex flex-col">
@@ -336,12 +338,12 @@ export default function AdminDashboard() {
                         {editingItem?.id === item.id ? (
                           <Input
                             type="text"
-                            value={editingItem[column]}
+                            value={String(editingItem[column])}
                             onChange={(e) => setEditingItem({
                               ...editingItem,
                               [column]: e.target.value
                             })}
-                            className="h-8 text-sm dark:bg-gray-700 dark:text-gray-100"
+                            className="w-full"
                           />
                         ) : (
                           String(item[column === 'createAt' ? 'createdAt' : column])

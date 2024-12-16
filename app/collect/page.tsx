@@ -1,16 +1,16 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Trash2, MapPin, CheckCircle, Clock, ArrowRight, Camera, Upload, Loader, Calendar, Weight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Camera } from 'lucide-react'
+import Image from 'next/image'
 import { toast } from 'react-hot-toast'
-import { GoogleGenerativeAI } from "@google/generative-ai"
 import { getUserByEmail, getWasteCollectionTasks, saveCollectedWaste, saveReward, updateTaskStatus } from '@/utils/db/actions'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // Make sure to set your Gemini API key in your environment variables
 const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
 
-type CollectionTask = {
+interface CollectionTask {
   id: number
   location: string
   wasteType: string
@@ -20,14 +20,13 @@ type CollectionTask = {
   collectorId: number | null
 }
 
-const ITEMS_PER_PAGE = 5
-
-// Add this type for verification guidelines
-type VerificationGuideline = {
+interface VerificationGuideline {
   met: boolean;
   message: string;
   icon: string; // For visual feedback
 };
+
+const ITEMS_PER_PAGE = 5
 
 export default function CollectPage() {
   const [tasks, setTasks] = useState<CollectionTask[]>([])
@@ -36,13 +35,22 @@ export default function CollectPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [user, setUser] = useState<{ id: number; email: string; name: string } | null>(null)
 
-  // Add this state for tracking verification guidelines
   const [guidelines, setGuidelines] = useState<VerificationGuideline[]>([
     { met: false, message: 'Image is clear and well-lit', icon: '🔆' },
     { met: false, message: 'Waste type matches report', icon: '♻️' },
     { met: false, message: 'Quantity is visible and matches', icon: '⚖️' },
     { met: false, message: 'Image angle shows waste clearly', icon: '📸' }
   ]);
+
+  const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null)
+  const [verificationImage, setVerificationImage] = useState<string | null>(null)
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'success' | 'failure'>('idle')
+  const [verificationResult, setVerificationResult] = useState<{
+    wasteTypeMatch: boolean;
+    quantityMatch: boolean;
+    confidence: number;
+  } | null>(null)
+  const [reward, setReward] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
@@ -76,16 +84,6 @@ export default function CollectPage() {
 
     fetchUserAndTasks()
   }, [])
-
-  const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null)
-  const [verificationImage, setVerificationImage] = useState<string | null>(null)
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'verifying' | 'success' | 'failure'>('idle')
-  const [verificationResult, setVerificationResult] = useState<{
-    wasteTypeMatch: boolean;
-    quantityMatch: boolean;
-    confidence: number;
-  } | null>(null)
-  const [reward, setReward] = useState<number | null>(null)
 
   const handleStatusChange = async (taskId: number, newStatus: CollectionTask['status']) => {
     if (!user) {
@@ -260,7 +258,7 @@ export default function CollectPage() {
       
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <Loader className="animate-spin h-8 w-8 text-gray-500" />
+          <div className="animate-spin h-8 w-8 text-gray-500" />
         </div>
       ) : (
         <>
@@ -269,14 +267,14 @@ export default function CollectPage() {
               <div key={task.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-lg font-medium text-gray-800 dark:text-gray-100 flex items-center">
-                    <MapPin className="w-5 h-5 mr-2 text-gray-500 dark:text-gray-400" />
+                    <div className="w-5 h-5 mr-2 text-gray-500" />
                     {task.location}
                   </h2>
                   <StatusBadge status={task.status} />
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-sm text-gray-600 dark:text-gray-300 mb-3">
                   <div className="flex items-center relative">
-                    <Trash2 className="w-4 h-4 mr-2 text-gray-500" />
+                    <div className="w-4 h-4 mr-2 text-gray-500" />
                     <span 
                       onMouseEnter={() => setHoveredWasteType(task.wasteType)}
                       onMouseLeave={() => setHoveredWasteType(null)}
@@ -291,11 +289,11 @@ export default function CollectPage() {
                     )}
                   </div>
                   <div className="flex items-center">
-                    <Weight className="w-4 h-4 mr-2 text-gray-500" />
+                    <div className="w-4 h-4 mr-2 text-gray-500" />
                     {task.amount}
                   </div>
                   <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-500" />
+                    <div className="w-4 h-4 mr-2 text-gray-500" />
                     {task.date}
                   </div>
                 </div>
@@ -354,7 +352,7 @@ export default function CollectPage() {
               </label>
               <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                 <div className="space-y-1 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                  <Camera className="mx-auto h-12 w-12 text-gray-400" />
                   <div className="flex flex-col text-sm text-gray-600">
                     <label
                       htmlFor="verification-image"
@@ -369,7 +367,7 @@ export default function CollectPage() {
               </div>
             </div>
             {verificationImage && (
-              <img src={verificationImage} alt="Verification" className="mb-4 rounded-md w-full" />
+              <Image src={verificationImage} alt="Verification" className="mb-4 rounded-md w-full" />
             )}
             <Button
               onClick={() => handleVerify()}
@@ -378,7 +376,7 @@ export default function CollectPage() {
             >
               {verificationStatus === 'verifying' ? (
                 <>
-                  <Loader className="animate-spin -ml-1 mr-3 h-5 w-5" />
+                  <div className="animate-spin -ml-1 mr-3 h-5 w-5" />
                   Verifying...
                 </>
               ) : 'Verify Collection'}
@@ -413,30 +411,23 @@ export default function CollectPage() {
           </div>
         </div>
       )}
-
-      {/* Add a conditional render to show user info or login prompt */}
-      {/* {user ? (
-        <p className="text-sm text-gray-600 mb-4">Logged in as: {user.name}</p>
-      ) : (
-        <p className="text-sm text-red-600 mb-4">Please log in to collect waste and earn rewards.</p>
-      )} */}
     </div>
   )
 }
 
 function StatusBadge({ status }: { status: CollectionTask['status'] }) {
   const statusConfig = {
-    pending: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-    in_progress: { color: 'bg-blue-100 text-blue-800', icon: Trash2 },
-    completed: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    verified: { color: 'bg-purple-100 text-purple-800', icon: CheckCircle },
+    pending: { color: 'bg-yellow-100 text-yellow-800', icon: <div className="w-3 h-3" /> },
+    in_progress: { color: 'bg-blue-100 text-blue-800', icon: <div className="w-3 h-3" /> },
+    completed: { color: 'bg-green-100 text-green-800', icon: <div className="w-3 h-3" /> },
+    verified: { color: 'bg-purple-100 text-purple-800', icon: <div className="w-3 h-3" /> },
   }
 
-  const { color, icon: Icon } = statusConfig[status]
+  const { color, icon } = statusConfig[status]
 
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-medium ${color} flex items-center`}>
-      <Icon className="mr-1 h-3 w-3" />
+      {icon}
       {status.replace('_', ' ')}
     </span>
   )

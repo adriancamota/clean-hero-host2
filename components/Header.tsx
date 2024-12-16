@@ -1,9 +1,9 @@
-// @ts-nocheck
+// Remove @ts-nocheck and fix types properly
 'use client'
 import { useState, useEffect, useCallback } from "react"
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { Menu, Coins, Leaf, Search, Bell, User, ChevronDown, LogIn, LogOut, MapPin, Trash2, ChevronRight, Loader } from "lucide-react"
+import { Bell, ChevronDown, Search, User, Menu, LogIn, Coins, ChevronRight, Loader } from "lucide-react"
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -18,28 +18,11 @@ import { useMediaQuery } from "@/hooks/useMediaQuery"
 import { createUser, getUnreadNotifications, markNotificationAsRead, getUserByEmail, getUserBalance } from "@/utils/db/actions"
 import debounce from 'lodash/debounce'
 
-const clientId = "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs";
-
-const chainConfig = {
-  chainNamespace: CHAIN_NAMESPACES.EIP155,
-  chainId: "0xaa36a7",
-  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-  displayName: "Ethereum Sepolia Testnet",
-  blockExplorerUrl: "https://sepolia.etherscan.io",
-  ticker: "ETH",
-  tickerName: "Ethereum",
-  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-};
-
-const privateKeyProvider = new EthereumPrivateKeyProvider({
-  config: { chainConfig },
-});
-
-const web3auth = new Web3Auth({
-  clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET, // Changed from SAPPHIRE_MAINNET to TESTNET
-  privateKeyProvider,
-});
+interface Notification {
+  id: number;
+  type: string;
+  message: string;
+}
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -52,6 +35,29 @@ interface SearchResult {
   type: 'navigation';
   url: string;
 }
+
+const clientId = "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs";
+
+const chainConfig = {
+  chainNamespace: CHAIN_NAMESPACES.EIP155,
+  chainId: "0xaa36a7",
+  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
+  displayName: "Ethereum Sepolia Testnet",
+  blockExplorerUrl: "https://sepolia.etherscan.io",
+  ticker: "ETH",
+  tickerName: "Ethereum",
+  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+} as const;
+
+const privateKeyProvider = new EthereumPrivateKeyProvider({
+  config: { chainConfig },
+});
+
+const web3auth = new Web3Auth({
+  clientId,
+  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET,
+  privateKeyProvider,
+});
 
 export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   const [provider, setProvider] = useState<IProvider | null>(null);
@@ -278,7 +284,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
             </Button>
           )}
           <div className="flex items-center">
-            <Leaf className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
+            <div className="w-4 h-4 mr-2 text-green-500" />
             <div className="flex flex-col">
               <span className="font-bold text-base md:text-lg text-gray-800 dark:text-gray-100">Clean Hero</span>
             </div>
